@@ -5,18 +5,20 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using DatingApp.API.Data;
-using DatingApp.API.Dtos;
 using DatingApp.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using DatingAPP.API.Data;
+using DatingApp.API.Dtos;
+using DatingAPP.API.Models;
 
 
 namespace DatingAPP.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController
+    public class AuthController : ControllerBase
     {
         private readonly IAuthRepository _repo;
         private readonly IConfiguration _config;
@@ -29,23 +31,24 @@ namespace DatingAPP.API.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register(UserForRegisterDto userForRegisterDto)
+        public async Task<IActionResult> Register(userForRegisterDto userForRegisterDto)
         {
             // validate request
-
-            userForRegisterDto.Username = userForRegisterDto.Username.ToLower();
-
+            userForRegisterDto.Username = Username.ToLower();
+            userForRegisterDto.Password = Password;
             if (await _repo.UserExists(userForRegisterDto.Username))
                 return BadRequest("Username already exists");
 
 
-            var userToCreate = _mapper.Map<User>(userForRegisterDto);
+            var userToCreate = new User {
+              Username = userForRegisterDto.Username
+            };
 
             var createdUser = await _repo.Register(userToCreate, userForRegisterDto.Password);
 
             var userToReturn = _mapper.Map<UserForDetailedDto>(createdUser);
 
-            return CreatedAtRoute("GetUser", new { controller = "Users", id = createdUser.Id }, userToReturn);
+            return StatusCode(201);
         }
 
         [HttpPost("login")]

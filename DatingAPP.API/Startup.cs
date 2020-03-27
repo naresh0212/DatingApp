@@ -1,4 +1,6 @@
 using System;
+using System.Net;
+using System.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,8 +14,12 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using DatingAPP.API.Data;
+using AutoMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Tokens;
 using DatingApp.API.Data;
-
 
 namespace DatingAPP.API
 {
@@ -34,9 +40,23 @@ namespace DatingAPP.API
            
                 x.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
             });
-            services.AddCors();
-             
+            services.AddCors();           
             services.AddScoped<IAuthRepository, AuthRepository>();
+            
+            services.AddAutoMapper();
+           
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII
+                            .GetBytes(Configuration.GetSection("AppSettings:Token").Value)),
+                        ValidateIssuer = false,
+                        ValidateAudience = false,
+                    };
+                });          
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
